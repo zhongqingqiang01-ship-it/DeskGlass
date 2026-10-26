@@ -1,0 +1,69 @@
+name: macOS build and tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: One-time import from the v0.1.0 draft source archive
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  import-first-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Import audited source archive from the first release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f Sources/App.swift ]; then echo 'Source already imported; refusing to overwrite it.'; exit 1; fi
+          gh release download v0.1.0 --repo "$GITHUB_REPOSITORY" --pattern 'DeskGlass-source-0.1.0.zip' --dir "$RUNNER_TEMP/deskglass-import"
+          python3 - <<'PY'
+          import os, pathlib, zipfile, stat
+          destination = pathlib.Path(os.environ['RUNNER_TEMP']) / 'deskglass-source'
+          archive = pathlib.Path(os.environ['RUNNER_TEMP']) / 'deskglass-import/DeskGlass-source-0.1.0.zip'
+          with zipfile.ZipFile(archive) as source:
+              for item in source.infolist():
+                  path = pathlib.PurePosixPath(item.filename)
+                  if path.is_absolute() or '..' in path.parts or '.git' in path.parts or stat.S_ISLNK(item.external_attr >> 16):
+                      raise SystemExit('Unexpected path in source archive')
+              source.extractall(destination)
+          PY
+          rsync -a --exclude '.git/' --exclude '.github/workflows/' "$RUNNER_TEMP/deskglass-source/" ./
+          chmod +x build.sh test.sh test-stage.sh scripts/*.sh 启动工作台.command
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish DeskGlass 0.1.0 open-source distribution'
+            git push origin HEAD:main
+          fi
+  verify:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.bootstrap) }}
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Core behavior tests
+        run: ./test.sh
+      - name: Public asset tests
+        run: npm test
+      - name: Build and package
+        run: ./scripts/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeskGlass-macos-arm64
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
