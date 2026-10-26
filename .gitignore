@@ -1,0 +1,13 @@
+.build/
+dist/
+node_modules/
+.local-data/
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+# Privately supplied model data is never part of the public distribution.
+Resources/Stage/models/gundam.js
+private-assets/
+Promo/

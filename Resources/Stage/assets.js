@@ -1,0 +1,1 @@
+window.DeskGlassStageAssets = ["ferrari", "pet"];

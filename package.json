@@ -1,0 +1,21 @@
+{
+  "name": "deskglass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline 3D asset build tools for DeskGlass",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:stage": "node Tools/build-stage.mjs",
+    "test": "node --test Tests/stage-assets.test.mjs"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "draco3dgltf": "1.5.7",
+    "esbuild": "0.25.12",
+    "three": "0.170.0"
+  }
+}
