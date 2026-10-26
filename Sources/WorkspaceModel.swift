@@ -52,7 +52,7 @@ struct FileEntry: Identifiable {
         if let first = prefs.folders.first { currentDirectory = URL(fileURLWithPath: first.path) }
         reloadFiles()
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 let next = Date()
                 if DailyNote.dayKey(self.now) != DailyNote.dayKey(next) { self.quoteOffset = 0 }
@@ -60,7 +60,7 @@ struct FileEntry: Identifiable {
             }
         }
         observer = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: eventStore, queue: .main) { [weak self] _ in
-            Task { @MainActor in await self?.refreshReminders() }
+            Task { @MainActor [weak self] in await self?.refreshReminders() }
         }
         Task { await refreshSources() }
     }

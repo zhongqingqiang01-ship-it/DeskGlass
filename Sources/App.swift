@@ -55,7 +55,7 @@ final class DesktopPanel: NSPanel {
         stageModel.onVisibility = { [weak self] shown in self?.setStageVisible(shown) }
         setStageVisible(stageModel.shown)
         screenObserver = NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.resetPositions() }
+            Task { @MainActor [weak self] in self?.resetPositions() }
         }
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         status.button?.image = NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: "桌面工作台")
